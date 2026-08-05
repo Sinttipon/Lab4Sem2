@@ -11,6 +11,9 @@ private:
     DynamicArray<T> data;
 
 public:
+    using iterator = typename DynamicArray<T>::iterator;
+    using const_iterator = typename DynamicArray<T>::const_iterator;
+
     MutableArraySequence(T *items, std::size_t count) : data(items, count) {}
     MutableArraySequence(std::size_t size) : data(size) {}
     MutableArraySequence(const MutableArraySequence &other) = default;
@@ -181,5 +184,25 @@ public:
             data = DynamicArray<T>(other.data);
         }
         return *this;
+    }
+
+    iterator begin()
+    {
+        return data.begin();
+    }
+
+    iterator end()
+    {
+        return data.end();
+    }
+
+    const_iterator begin() const
+    {
+        return data.begin();
+    }
+
+    const_iterator end() const
+    {
+        return data.end();
     }
 };
