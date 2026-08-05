@@ -17,8 +17,9 @@ public:
     DynamicArray(std::size_t size);
     DynamicArray() : data(nullptr), size(0) {}
     DynamicArray( const DynamicArray<T> &other);
-    DynamicArray(std::initializer_list<T> list) : size(list.size()), data(new T[size])
-    {
+    DynamicArray(std::initializer_list<T> list){
+        size = list.size();
+        data = new T[size];
         std::size_t i = 0;
         for (const T &value : list)
         {
@@ -60,10 +61,15 @@ DynamicArray<T>::DynamicArray(T *items, std::size_t count)
 }
 
 template <typename T>
-DynamicArray<T>::DynamicArray(const DynamicArray &other) : size(other.size), data(new T[size])
+DynamicArray<T>::DynamicArray(const DynamicArray<T> &other)
 {
-    for (std::size_t i = 0; i<size; ++i)
-        data[i]=other.data[i];
+    size = other.size;
+    data = new T[size];
+
+    for (std::size_t i = 0; i < size; ++i)
+    {
+        data[i] = other.data[i];
+    }
 }
 
 template <typename T>
