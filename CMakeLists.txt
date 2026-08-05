@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(SequenceTests)
+project(AllTests)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -7,25 +7,40 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 set(TESTS_DIR ${CMAKE_SOURCE_DIR}/tests)
 
+enable_testing()
+
 set(CORE_HEADERS
     ${INCLUDE_DIR}/core/exceptions.hpp
+    ${INCLUDE_DIR}/core/Option.hpp
+    ${INCLUDE_DIR}/core/Cardinal.hpp
     ${INCLUDE_DIR}/core/DynamicArray.hpp
     ${INCLUDE_DIR}/core/Sequence.hpp
     ${INCLUDE_DIR}/core/MutableArraySequence.hpp
+    ${INCLUDE_DIR}/core/Generator.hpp
 )
 
-add_executable(MutableArraySequenceTests
-    ${TESTS_DIR}/MutableArraySequenceTest.cpp
+set(GENERATOR_HEADERS
+    ${INCLUDE_DIR}/generators/SequenceGenerator.hpp
+    ${INCLUDE_DIR}/generators/RecurrentGenerator.hpp
+    ${INCLUDE_DIR}/generators/MapGenerator.hpp
+    ${INCLUDE_DIR}/generators/WhereGenerator.hpp
+    ${INCLUDE_DIR}/generators/CompositeGenerator.hpp
+)
+
+add_executable(GeneratorTests
+    ${TESTS_DIR}/GeneratorTest.cpp
     ${TESTS_DIR}/test_common.hpp
     ${CORE_HEADERS}
+    ${GENERATOR_HEADERS}
 )
 
-target_include_directories(MutableArraySequenceTests PRIVATE
+target_include_directories(GeneratorTests PRIVATE
     ${INCLUDE_DIR}
     ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/generators
 )
 
-add_test(NAME MutableArraySequenceTests COMMAND MutableArraySequenceTests)
+add_test(NAME GeneratorTests COMMAND GeneratorTests)
 
 add_executable(DynamicArrayTests
     ${TESTS_DIR}/DynamicArrayTest.cpp
@@ -40,3 +55,16 @@ target_include_directories(DynamicArrayTests PRIVATE
 )
 
 add_test(NAME DynamicArrayTests COMMAND DynamicArrayTests)
+
+add_executable(MutableArraySequenceTests
+    ${TESTS_DIR}/MutableArraySequenceTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${CORE_HEADERS}
+)
+
+target_include_directories(MutableArraySequenceTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+)
+
+add_test(NAME MutableArraySequenceTests COMMAND MutableArraySequenceTests)

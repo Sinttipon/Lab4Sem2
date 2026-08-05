@@ -1,6 +1,6 @@
 #pragma once
-#include "Generator.hpp"
-#include "MutableArraySequence.hpp"
+#include "core/Generator.hpp"
+#include "core/MutableArraySequence.hpp"
 #include <memory>
 
 template <typename T>

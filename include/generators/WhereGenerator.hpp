@@ -1,6 +1,7 @@
 #pragma once
-#include "Generator.hpp"
-#include "Option.hpp"
+#include "core/Generator.hpp"
+#include "core/Option.hpp"
+#include "core/Cardinal.hpp"
 #include <functional>
 #include <memory>
 

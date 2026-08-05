@@ -1,6 +1,6 @@
-// include/lazy/CompositeGenerator.hpp
 #pragma once
-#include "Generator.hpp"
+#include "../core/Generator.hpp"
+#include "../core/Cardinal.hpp"
 #include <memory>
 
 template <typename T>
@@ -12,7 +12,8 @@ private:
     bool m_firstDone = false;
 
 public:
-    CompositeGenerator(std::shared_ptr<Generator<T>> first,std::shared_ptr<Generator<T>> second) : m_first(first), m_second(second) {}
+    CompositeGenerator(std::shared_ptr<Generator<T>> first, std::shared_ptr<Generator<T>> second)
+        : m_first(first), m_second(second) {}
 
     T GetNext() override
     {
@@ -20,11 +21,7 @@ public:
         {
             return m_first->GetNext();
         }
-
-        if (!m_firstDone)
-        {
-            m_firstDone = true;
-        }
+        m_firstDone = true;
 
         if (m_second && m_second->HasNext())
         {
@@ -40,8 +37,11 @@ public:
         {
             return true;
         }
-
-        return m_second && m_second->HasNext();
+        if (m_second && m_second->HasNext())
+        {
+            return true;
+        }
+        return false;
     }
 
     Cardinal GetPotentialSize() const override
@@ -59,8 +59,12 @@ public:
 
     Generator<T> *Clone() const override
     {
-        auto f = m_first ? std::shared_ptr<Generator<T>>(m_first->Clone()) : nullptr;
-        auto s = m_second ? std::shared_ptr<Generator<T>>(m_second->Clone()) : nullptr;
-        return new CompositeGenerator<T>(f, s);
+        auto f = m_first ? m_first->Clone() : nullptr;
+        auto s = m_second ? m_second->Clone() : nullptr;
+
+        std::shared_ptr<Generator<T>> fPtr(f);
+        std::shared_ptr<Generator<T>> sPtr(s);
+
+        return new CompositeGenerator<T>(fPtr, sPtr);
     }
 };
