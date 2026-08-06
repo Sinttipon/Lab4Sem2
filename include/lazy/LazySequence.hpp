@@ -83,3 +83,298 @@ public:
     template <typename U>
     U Reduce(std::function<U(const U &, const T &)> func, U init) const;
 };
+
+template <typename T>
+LazySequence<T> LazySequence<T>::Append(T item) const
+{
+    struct AppendGen : Generator<T>
+    {
+        std::shared_ptr<LazySequence<T>> seq;
+        T val;
+        size_t pos = 0;
+        bool srcDone = false;
+
+        AppendGen(std::shared_ptr<LazySequence<T>> s, T v) : seq(s), val(v) {}
+
+        T GetNext() override
+        {
+            if (!srcDone)
+            {
+                try
+                {
+                    return seq->Get(Cardinal(pos++));
+                }
+                catch (const IndexOutOfRange &)
+                {
+                    srcDone = true;
+                }
+            }
+            return val;
+        }
+
+        bool HasNext() const override
+        {
+            if (srcDone)
+                return false;
+            auto sz = seq->GetSizeSequence();
+            return sz.IsInfinite() || pos < sz.GetValue();
+        }
+
+        Cardinal GetPotentialSize() const override
+        {
+            auto sz = seq->GetSizeSequence();
+            if (sz.IsInfinite())
+                return Cardinal::Omega();
+            return Cardinal::Finite(sz.GetValue() + 1);
+        }
+
+        Generator<T> *Clone() const override { return new AppendGen(*this); }
+    };
+
+    auto self = std::make_shared<LazySequence<T>>(*this);
+    auto gen = std::make_shared<AppendGen>(self, item);
+    return LazySequence(MutableArraySequence<T>(), gen);
+}
+
+template <typename T>
+LazySequence<T> LazySequence<T>::Prepend(T item) const
+{
+    struct PrependGen : Generator<T>
+    {
+        std::shared_ptr<LazySequence<T>> seq;
+        T val;
+        size_t pos = 0;
+        bool returned = false;
+
+        PrependGen(std::shared_ptr<LazySequence<T>> s, T v) : seq(s), val(v) {}
+
+        T GetNext() override
+        {
+            if (!returned)
+            {
+                returned = true;
+                return val;
+            }
+            return seq->Get(Cardinal(pos++));
+        }
+
+        bool HasNext() const override
+        {
+            if (!returned)
+                return true;
+            auto sz = seq->GetSizeSequence();
+            return sz.IsInfinite() || pos < sz.GetValue();
+        }
+
+        Cardinal GetPotentialSize() const override
+        {
+            auto sz = seq->GetSizeSequence();
+            if (sz.IsInfinite())
+                return Cardinal::Omega();
+            return Cardinal::Finite(sz.GetValue() + 1);
+        }
+
+        Generator<T> *Clone() const override { return new PrependGen(*this); }
+    };
+
+    auto self = std::make_shared<LazySequence<T>>(*this);
+    auto gen = std::make_shared<PrependGen>(self, item);
+    return LazySequence(MutableArraySequence<T>(), gen);
+}
+
+template <typename T>
+LazySequence<T> LazySequence<T>::InsertAt(T item, size_t index) const
+{
+    struct InsertGen : Generator<T>
+    {
+        std::shared_ptr<LazySequence<T>> seq;
+        size_t idx;
+        T val;
+        size_t pos = 0;
+        bool inserted = false;
+
+        InsertGen(std::shared_ptr<LazySequence<T>> s, size_t i, T v) : seq(s), idx(i), val(v) {}
+
+        T GetNext() override
+        {
+            if (!inserted && pos == idx)
+            {
+                inserted = true;
+                ++pos;
+                return val;
+            }
+            return seq->Get(Cardinal(pos++));
+        }
+
+        bool HasNext() const override
+        {
+            if (!inserted && pos <= idx)
+                return true;
+            auto sz = seq->GetSizeSequence();
+            return sz.IsInfinite() || pos < sz.GetValue();
+        }
+
+        Cardinal GetPotentialSize() const override
+        {
+            auto sz = seq->GetSizeSequence();
+            if (sz.IsInfinite())
+                return Cardinal::Omega();
+            return Cardinal::Finite(sz.GetValue() + 1);
+        }
+
+        Generator<T> *Clone() const override { return new InsertGen(*this); }
+    };
+
+    auto self = std::make_shared<LazySequence<T>>(*this);
+    auto gen = std::make_shared<InsertGen>(self, index, item);
+    return LazySequence(MutableArraySequence<T>(), gen);
+}
+
+template <typename T>
+LazySequence<T> LazySequence<T>::Concat(const LazySequence<T> &other) const
+{
+    struct ConcatGen : Generator<T>
+    {
+        std::shared_ptr<LazySequence<T>> first;
+        std::shared_ptr<LazySequence<T>> second;
+        size_t posFirst = 0;
+        size_t posSecond = 0;
+        bool firstDone = false;
+
+        ConcatGen(std::shared_ptr<LazySequence<T>> f, std::shared_ptr<LazySequence<T>> s) : first(f), second(s) {}
+
+        T GetNext() override
+        {
+            if (!firstDone)
+            {
+                try
+                {
+                    T val = first->Get(Cardinal(posFirst));
+                    ++posFirst;
+                    return val;
+                }
+                catch (const IndexOutOfRange &)
+                {
+                    firstDone = true;
+                }
+            }
+            T val = second->Get(Cardinal(posSecond));
+            ++posSecond;
+            return val;
+        }
+
+        bool HasNext() const override
+        {
+            if (!firstDone)
+                return true;
+            auto sz2 = second->GetSizeSequence();
+            return sz2.IsInfinite() || posSecond < sz2.GetValue();
+        }
+
+        Cardinal GetPotentialSize() const override
+        {
+            auto sz1 = first->GetSizeSequence();
+            auto sz2 = second->GetSizeSequence();
+            if (sz1.IsInfinite() || sz2.IsInfinite())
+                return Cardinal::Omega();
+            return Cardinal::Finite(sz1.GetValue() + sz2.GetValue());
+        }
+
+        Generator<T> *Clone() const override { return new ConcatGen(*this); }
+    };
+
+    auto self = std::make_shared<LazySequence<T>>(*this);
+    auto otherPtr = std::make_shared<LazySequence<T>>(other);
+    auto gen = std::make_shared<ConcatGen>(self, otherPtr);
+    return LazySequence(MutableArraySequence<T>(), gen);
+}
+
+template <typename T>
+template <typename U>
+LazySequence<U> LazySequence<T>::Map(std::function<U(const T &)> func) const
+{
+    struct MapGen : Generator<U>
+    {
+        std::shared_ptr<LazySequence<T>> src;
+        std::function<U(const T &)> f;
+        size_t pos = 0;
+
+        MapGen(std::shared_ptr<LazySequence<T>> s, std::function<U(const T &)> fn) : src(s), f(fn) {}
+
+        U GetNext() override
+        {
+            return f(src->Get(Cardinal(pos++)));
+        }
+
+        bool HasNext() const override
+        {
+            auto sz = src->GetSizeSequence();
+            return sz.IsInfinite() || pos < sz.GetValue();
+        }
+
+        Cardinal GetPotentialSize() const override
+        {
+            return src->GetSizeSequence();
+        }
+
+        Generator<U> *Clone() const override
+        {
+            return new MapGen(*this);
+        }
+    };
+
+    auto self = std::make_shared<LazySequence<T>>(*this);
+    auto gen = std::make_shared<MapGen>(self, func);
+    return LazySequence<U>(MutableArraySequence<U>(), gen);
+}
+
+template <typename T>
+LazySequence<T> LazySequence<T>::Where(std::function<bool(const T &)> pred) const
+{
+    struct WhereGen : Generator<T>
+    {
+        std::shared_ptr<LazySequence<T>> src;
+        std::function<bool(const T &)> p;
+        size_t pos = 0;
+
+        WhereGen(std::shared_ptr<LazySequence<T>> s, std::function<bool(const T &)> pr) : src(s), p(pr) {}
+
+        T GetNext() override
+        {
+            while (true)
+            {
+                T val = src->Get(Cardinal(pos++));
+                if (p(val))
+                    return val;
+            }
+        }
+
+        bool HasNext() const override { return true; }
+        Cardinal GetPotentialSize() const override { return Cardinal::Omega(); }
+
+        Generator<T> *Clone() const override { return new WhereGen(*this); }
+    };
+
+    auto self = std::make_shared<LazySequence<T>>(*this);
+    auto gen = std::make_shared<WhereGen>(self, pred);
+    return LazySequence(MutableArraySequence<T>(), gen);
+}
+
+template <typename T>
+template <typename U>
+U LazySequence<T>::Reduce(std::function<U(const U &, const T &)> func, U init) const
+{
+    U acc = init;
+    for (size_t i = 0;; ++i)
+    {
+        try
+        {
+            acc = func(acc, const_cast<LazySequence *>(this)->Get(Cardinal(i)));
+        }
+        catch (const IndexOutOfRange &)
+        {
+            break;
+        }
+    }
+    return acc;
+}
