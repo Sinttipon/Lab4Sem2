@@ -192,3 +192,23 @@ target_include_directories(StateTests PRIVATE
 )
 
 add_test(NAME StateTests COMMAND StateTests)
+
+# ============================================================
+# TRANSITION TESTS
+# ============================================================
+
+add_executable(TransitionTests
+    ${TESTS_DIR}/TransitionTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${INCLUDE_DIR}/statemachine/Transition.hpp
+    ${INCLUDE_DIR}/core/Option.hpp
+    ${INCLUDE_DIR}/core/exceptions.hpp
+)
+
+target_include_directories(TransitionTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/statemachine
+)
+
+add_test(NAME TransitionTests COMMAND TransitionTests)
