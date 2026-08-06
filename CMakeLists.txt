@@ -105,3 +105,22 @@ target_include_directories(LazySequenceTests PRIVATE
 )
 
 add_test(NAME LazySequenceTests COMMAND LazySequenceTests)
+
+# ============================================================
+# STRINGSTREAM TESTS
+# ============================================================
+
+add_executable(StringStreamTests
+    ${TESTS_DIR}/StringStreamTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${INCLUDE_DIR}/streams/StringStream.hpp
+    ${INCLUDE_DIR}/streams/IStream.hpp
+)
+
+target_include_directories(StringStreamTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/streams
+)
+
+add_test(NAME StringStreamTests COMMAND StringStreamTests)
