@@ -18,7 +18,8 @@ private:
         while (m_cache.GetLength() <= idx)
         {
             if (!m_gen || !m_gen->HasNext())
-                throw IndexOutOfRange(idx, m_cache.GetLength(), "LazySequence::EnsureMaterialized");
+                throw IndexOutOfRange(idx, m_cache.GetLength(),
+                                      "LazySequence::EnsureMaterialized");
             m_cache.Append(m_gen->GetNext());
         }
     }
@@ -26,7 +27,7 @@ private:
 public:
     LazySequence() : m_gen(nullptr), m_cache() {}
     LazySequence(const MutableArraySequence<T> &cache) : m_gen(nullptr), m_cache(cache) {}
-    LazySequence(const MutableArraySequence<T> &cache, std::shared_ptr<Generator<T>> gen) : m_gen(gen), m_cache(cache) {}
+    LazySequence(const MutableArraySequence<T> &cache,std::shared_ptr<Generator<T>> gen) : m_gen(gen), m_cache(cache) {}
     LazySequence(T *items, size_t count) : m_gen(nullptr), m_cache(items, count) {}
     LazySequence(std::initializer_list<T> list) : m_gen(nullptr), m_cache()
     {
@@ -37,6 +38,35 @@ public:
     static LazySequence FromGenerator(std::shared_ptr<Generator<T>> gen)
     {
         return LazySequence(MutableArraySequence<T>(), gen);
+    }
+
+    static LazySequence Recurrent(std::function<T(const MutableArraySequence<T> &)> func, const MutableArraySequence<T> &start)
+    {
+        struct RecurrentGen : Generator<T>
+        {
+            std::function<T(const MutableArraySequence<T> &)> f;
+            MutableArraySequence<T> cache;
+            size_t pos = 0;
+
+            RecurrentGen(std::function<T(const MutableArraySequence<T> &)> func,const MutableArraySequence<T> &start)
+             : f(func), cache(start), pos(start.GetLength()) {}
+
+            T GetNext() override
+            {
+                if (pos < cache.GetLength())
+                    return cache.Get(pos++);
+                T val = f(cache);
+                cache.Append(val);
+                pos++;
+                return val;
+            }
+            bool HasNext() const override { return true; }
+            Cardinal GetPotentialSize() const override { return Cardinal::Omega(); }
+            Generator<T> *Clone() const override { return new RecurrentGen(*this); }
+        };
+
+        auto gen = std::make_shared<RecurrentGen>(func, start);
+        return LazySequence(start, gen);
     }
 
     T GetFirst()
@@ -116,8 +146,15 @@ LazySequence<T> LazySequence<T>::Append(T item) const
         {
             if (srcDone)
                 return false;
+
             auto sz = seq->GetSizeSequence();
-            return sz.IsInfinite() || pos < sz.GetValue();
+            if (sz.IsInfinite())
+                return true;
+
+            if (pos < sz.GetValue())
+                return true;
+
+            return true;
         }
 
         Cardinal GetPotentialSize() const override
@@ -200,10 +237,12 @@ LazySequence<T> LazySequence<T>::InsertAt(T item, size_t index) const
             if (!inserted && pos == idx)
             {
                 inserted = true;
-                ++pos;
                 return val;
             }
-            return seq->Get(Cardinal(pos++));
+
+            T result = seq->Get(Cardinal(pos));
+            pos++;
+            return result;
         }
 
         bool HasNext() const override
@@ -211,7 +250,16 @@ LazySequence<T> LazySequence<T>::InsertAt(T item, size_t index) const
             if (!inserted && pos <= idx)
                 return true;
             auto sz = seq->GetSizeSequence();
-            return sz.IsInfinite() || pos < sz.GetValue();
+            if (sz.IsInfinite())
+                return true;
+
+            if (pos < sz.GetValue())
+                return true;
+
+            if (!inserted && pos == sz.GetValue())
+                return true;
+
+            return false;
         }
 
         Cardinal GetPotentialSize() const override
@@ -336,21 +384,62 @@ LazySequence<T> LazySequence<T>::Where(std::function<bool(const T &)> pred) cons
         std::shared_ptr<LazySequence<T>> src;
         std::function<bool(const T &)> p;
         size_t pos = 0;
+        mutable bool reachedEnd = false;
 
-        WhereGen(std::shared_ptr<LazySequence<T>> s, std::function<bool(const T &)> pr) : src(s), p(pr) {}
+        WhereGen(std::shared_ptr<LazySequence<T>> s, std::function<bool(const T &)> pr) : src(s), p(pr), reachedEnd(false) {}
 
         T GetNext() override
         {
             while (true)
             {
+                auto sz = src->GetSizeSequence();
+                if (sz.IsFinite() && pos >= sz.GetValue())
+                {
+                    reachedEnd = true;
+                    throw IndexOutOfRange(pos, sz.GetValue(), "WhereGen::GetNext");
+                }
+
                 T val = src->Get(Cardinal(pos++));
                 if (p(val))
                     return val;
             }
         }
 
-        bool HasNext() const override { return true; }
-        Cardinal GetPotentialSize() const override { return Cardinal::Omega(); }
+        bool HasNext() const override
+        {
+            if (reachedEnd)
+                return false;
+
+            auto sz = src->GetSizeSequence();
+            if (sz.IsInfinite())
+                return true;
+
+            size_t tempPos = pos;
+            while (tempPos < sz.GetValue())
+            {
+                try
+                {
+                    T val = src->Get(Cardinal(tempPos++));
+                    if (p(val))
+                        return true;
+                }
+                catch (const IndexOutOfRange &)
+                {
+                    reachedEnd = true;
+                    return false;
+                }
+            }
+            reachedEnd = true;
+            return false;
+        }
+
+        Cardinal GetPotentialSize() const override
+        {
+            auto sz = src->GetSizeSequence();
+            if (sz.IsInfinite())
+                return Cardinal::Omega();
+            return Cardinal::Finite(sz.GetValue());
+        }
 
         Generator<T> *Clone() const override { return new WhereGen(*this); }
     };

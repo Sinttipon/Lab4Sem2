@@ -27,6 +27,14 @@ set(GENERATOR_HEADERS
     ${INCLUDE_DIR}/generators/CompositeGenerator.hpp
 )
 
+set(LAZY_HEADERS
+    ${INCLUDE_DIR}/lazy/LazySequence.hpp
+)
+
+# ============================================================
+# GENERATOR TESTS
+# ============================================================
+
 add_executable(GeneratorTests
     ${TESTS_DIR}/GeneratorTest.cpp
     ${TESTS_DIR}/test_common.hpp
@@ -42,6 +50,10 @@ target_include_directories(GeneratorTests PRIVATE
 
 add_test(NAME GeneratorTests COMMAND GeneratorTests)
 
+# ============================================================
+# DYNAMICARRAY TESTS
+# ============================================================
+
 add_executable(DynamicArrayTests
     ${TESTS_DIR}/DynamicArrayTest.cpp
     ${TESTS_DIR}/test_common.hpp
@@ -56,6 +68,10 @@ target_include_directories(DynamicArrayTests PRIVATE
 
 add_test(NAME DynamicArrayTests COMMAND DynamicArrayTests)
 
+# ============================================================
+# MUTABLEARRAYSEQUENCE TESTS
+# ============================================================
+
 add_executable(MutableArraySequenceTests
     ${TESTS_DIR}/MutableArraySequenceTest.cpp
     ${TESTS_DIR}/test_common.hpp
@@ -68,3 +84,24 @@ target_include_directories(MutableArraySequenceTests PRIVATE
 )
 
 add_test(NAME MutableArraySequenceTests COMMAND MutableArraySequenceTests)
+
+# ============================================================
+# LAZYSEQUENCE TESTS
+# ============================================================
+
+add_executable(LazySequenceTests
+    ${TESTS_DIR}/LazySequenceTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${CORE_HEADERS}
+    ${GENERATOR_HEADERS}
+    ${LAZY_HEADERS}
+)
+
+target_include_directories(LazySequenceTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/generators
+    ${INCLUDE_DIR}/lazy
+)
+
+add_test(NAME LazySequenceTests COMMAND LazySequenceTests)
