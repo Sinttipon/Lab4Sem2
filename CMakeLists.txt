@@ -124,3 +124,71 @@ target_include_directories(StringStreamTests PRIVATE
 )
 
 add_test(NAME StringStreamTests COMMAND StringStreamTests)
+
+# ============================================================
+# FILESTREAM TESTS
+# ============================================================
+
+add_executable(FileStreamTests
+    ${TESTS_DIR}/FileStreamTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${INCLUDE_DIR}/streams/FileStream.hpp
+    ${INCLUDE_DIR}/streams/IStream.hpp
+)
+
+target_include_directories(FileStreamTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/streams
+)
+
+add_test(NAME FileStreamTests COMMAND FileStreamTests)
+
+# ============================================================
+# LAZYSEQUENCESTREAM TESTS
+# ============================================================
+
+set(LAZY_STREAM_HEADERS
+    ${INCLUDE_DIR}/streams/LazySequenceStream.hpp
+    ${INCLUDE_DIR}/streams/IStream.hpp
+    ${INCLUDE_DIR}/lazy/LazySequence.hpp
+)
+
+add_executable(LazySequenceStreamTests
+    ${TESTS_DIR}/LazySequenceStreamTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${CORE_HEADERS}
+    ${GENERATOR_HEADERS}
+    ${LAZY_HEADERS}
+    ${LAZY_STREAM_HEADERS}
+)
+
+target_include_directories(LazySequenceStreamTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/generators
+    ${INCLUDE_DIR}/lazy
+    ${INCLUDE_DIR}/streams
+)
+
+add_test(NAME LazySequenceStreamTests COMMAND LazySequenceStreamTests)
+
+# ============================================================
+# STATE TESTS
+# ============================================================
+
+add_executable(StateTests
+    ${TESTS_DIR}/StateTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${INCLUDE_DIR}/statemachine/State.hpp
+    ${INCLUDE_DIR}/core/Option.hpp
+    ${INCLUDE_DIR}/core/exceptions.hpp
+)
+
+target_include_directories(StateTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/statemachine
+)
+
+add_test(NAME StateTests COMMAND StateTests)
