@@ -3,6 +3,15 @@ project(AllTests)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+set(CMAKE_AUTOUIC ON)
+
+# ============================================================
+# НАСТРОЙКА QT6
+# ============================================================
+
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 set(TESTS_DIR ${CMAKE_SOURCE_DIR}/tests)
@@ -29,6 +38,24 @@ set(GENERATOR_HEADERS
 
 set(LAZY_HEADERS
     ${INCLUDE_DIR}/lazy/LazySequence.hpp
+)
+
+set(STREAM_HEADERS
+    ${INCLUDE_DIR}/streams/IStream.hpp
+    ${INCLUDE_DIR}/streams/StringStream.hpp
+    ${INCLUDE_DIR}/streams/FileStream.hpp
+    ${INCLUDE_DIR}/streams/LazySequenceStream.hpp
+)
+
+set(STATEMACHINE_HEADERS
+    ${INCLUDE_DIR}/statemachine/State.hpp
+    ${INCLUDE_DIR}/statemachine/Transition.hpp
+    ${INCLUDE_DIR}/statemachine/StateMachine.hpp
+    ${INCLUDE_DIR}/statemachine/StateMachineBuilder.hpp
+)
+
+set(UTILS_HEADERS
+    ${INCLUDE_DIR}/utils/Logger.hpp
 )
 
 # ============================================================
@@ -148,19 +175,13 @@ add_test(NAME FileStreamTests COMMAND FileStreamTests)
 # LAZYSEQUENCESTREAM TESTS
 # ============================================================
 
-set(LAZY_STREAM_HEADERS
-    ${INCLUDE_DIR}/streams/LazySequenceStream.hpp
-    ${INCLUDE_DIR}/streams/IStream.hpp
-    ${INCLUDE_DIR}/lazy/LazySequence.hpp
-)
-
 add_executable(LazySequenceStreamTests
     ${TESTS_DIR}/LazySequenceStreamTest.cpp
     ${TESTS_DIR}/test_common.hpp
     ${CORE_HEADERS}
     ${GENERATOR_HEADERS}
     ${LAZY_HEADERS}
-    ${LAZY_STREAM_HEADERS}
+    ${STREAM_HEADERS}
 )
 
 target_include_directories(LazySequenceStreamTests PRIVATE
@@ -217,12 +238,6 @@ add_test(NAME TransitionTests COMMAND TransitionTests)
 # STATEMACHINE TESTS
 # ============================================================
 
-set(STATEMACHINE_HEADERS
-    ${INCLUDE_DIR}/statemachine/State.hpp
-    ${INCLUDE_DIR}/statemachine/Transition.hpp
-    ${INCLUDE_DIR}/statemachine/StateMachine.hpp
-)
-
 add_executable(StateMachineTests
     ${TESTS_DIR}/StateMachineTest.cpp
     ${TESTS_DIR}/test_common.hpp
@@ -242,6 +257,8 @@ target_include_directories(StateMachineTests PRIVATE
     ${INCLUDE_DIR}/statemachine
 )
 
+target_link_libraries(StateMachineTests Qt6::Core Qt6::Widgets)
+
 add_test(NAME StateMachineTests COMMAND StateMachineTests)
 
 # ============================================================
@@ -256,7 +273,6 @@ add_executable(StateMachineBuilderTests
     ${LAZY_HEADERS}
     ${STREAM_HEADERS}
     ${STATEMACHINE_HEADERS}
-    ${INCLUDE_DIR}/statemachine/StateMachineBuilder.hpp
 )
 
 target_include_directories(StateMachineBuilderTests PRIVATE
@@ -267,5 +283,7 @@ target_include_directories(StateMachineBuilderTests PRIVATE
     ${INCLUDE_DIR}/streams
     ${INCLUDE_DIR}/statemachine
 )
+
+target_link_libraries(StateMachineBuilderTests Qt6::Core Qt6::Widgets)
 
 add_test(NAME StateMachineBuilderTests COMMAND StateMachineBuilderTests)
