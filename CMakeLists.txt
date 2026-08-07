@@ -212,3 +212,60 @@ target_include_directories(TransitionTests PRIVATE
 )
 
 add_test(NAME TransitionTests COMMAND TransitionTests)
+
+# ============================================================
+# STATEMACHINE TESTS
+# ============================================================
+
+set(STATEMACHINE_HEADERS
+    ${INCLUDE_DIR}/statemachine/State.hpp
+    ${INCLUDE_DIR}/statemachine/Transition.hpp
+    ${INCLUDE_DIR}/statemachine/StateMachine.hpp
+)
+
+add_executable(StateMachineTests
+    ${TESTS_DIR}/StateMachineTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${CORE_HEADERS}
+    ${GENERATOR_HEADERS}
+    ${LAZY_HEADERS}
+    ${STREAM_HEADERS}
+    ${STATEMACHINE_HEADERS}
+)
+
+target_include_directories(StateMachineTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/generators
+    ${INCLUDE_DIR}/lazy
+    ${INCLUDE_DIR}/streams
+    ${INCLUDE_DIR}/statemachine
+)
+
+add_test(NAME StateMachineTests COMMAND StateMachineTests)
+
+# ============================================================
+# STATEMACHINEBUILDER TESTS
+# ============================================================
+
+add_executable(StateMachineBuilderTests
+    ${TESTS_DIR}/StateMachineBuilderTest.cpp
+    ${TESTS_DIR}/test_common.hpp
+    ${CORE_HEADERS}
+    ${GENERATOR_HEADERS}
+    ${LAZY_HEADERS}
+    ${STREAM_HEADERS}
+    ${STATEMACHINE_HEADERS}
+    ${INCLUDE_DIR}/statemachine/StateMachineBuilder.hpp
+)
+
+target_include_directories(StateMachineBuilderTests PRIVATE
+    ${INCLUDE_DIR}
+    ${INCLUDE_DIR}/core
+    ${INCLUDE_DIR}/generators
+    ${INCLUDE_DIR}/lazy
+    ${INCLUDE_DIR}/streams
+    ${INCLUDE_DIR}/statemachine
+)
+
+add_test(NAME StateMachineBuilderTests COMMAND StateMachineBuilderTests)
